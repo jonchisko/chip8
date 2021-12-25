@@ -1,4 +1,5 @@
 use super::Cpu;
+use rand::{self, Rng};
 
 struct Instructions {
     collection_0: [fn(cmd: u16, cpu: &mut Cpu) -> (); 0xF + 1],
@@ -185,8 +186,8 @@ fn shiftright_8xy6(cmd: u16, cpu: &mut Cpu) {
 }
 
 fn sub_8xy7(cmd: u16, cpu: &mut Cpu) {
-    let x = cmd & 0x0F00 >> 8;
-    let y = cmd & 0x00F0 >> 4;
+    let x = get_x(cmd);
+    let y = get_y(cmd);
     let new_cmd = (8 << 12) | (y << 8) | (x << 4) | (7);
     sub_8xy5(new_cmd, cpu);
 }
@@ -197,3 +198,53 @@ fn shiftleft_8xyE(cmd: u16, cpu: &mut Cpu) {
         cpu.registers_general[x as usize] <<= 1;
     })
 }
+
+fn set_i_annn(cmd: u16, cpu: &mut Cpu) {
+    let addr = cmd & 0x0FFF;
+    cpu.register_i = addr;
+}
+
+fn jump_bnnn(cmd: u16, cpu: &mut Cpu) {
+    let addr = cmd & 0x0FFF;
+    cpu.pc = cpu.registers_general[0] as u16 + addr;
+}
+
+fn rand_cxkk(cmd: u16, cpu: &mut Cpu) {
+    let x = get_x(cmd);
+    // it would be better to have a struct and some interface to call rand @SirŠirŠkuta
+    let rnd = rand::thread_rng().gen_range(0..=255) as u8; 
+    let constant = (cmd & 0x00FF) as u8;
+    cpu.registers_general[x as usize] = rnd & constant;
+}
+
+fn draw_dxyn(cmd: u16, cpu: &mut Cpu) {
+    let x = get_x(cmd);
+    let y = get_y(cmd);
+    let size = cmd & 0x000F;
+
+    let sprite_data = &cpu.memory[(cpu.register_i as usize)..(cpu.register_i as usize + size as usize)];
+
+    let mut row = y;
+    let mut col = x;
+
+    for i in 0..size {
+        let color_byte = sprite_data[i as usize];
+        row = (row + 1) % 32;
+        for j in 0..8 {
+            col = (col + 1) % 64;
+            let lin_indx = row * 64 + col;
+
+            if color_byte >> (7 - j) & 0b1 == 1 {
+                if cpu.display[lin_indx as usize] == 0xFFFFFFFF {
+                    // collision
+                    cpu.registers_general[0xF] = 1;
+                }
+                cpu.display[lin_indx as usize] ^= 0xFFFFFFFF;
+            }
+        }
+    }
+}
+
+
+
+
