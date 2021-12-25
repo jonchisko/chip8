@@ -2,7 +2,7 @@
 
 mod instructions;
 
-
+const FONT_START: u16 = 0x050u16;
 
 
 struct Cpu {
