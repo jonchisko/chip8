@@ -234,7 +234,7 @@ fn draw_dxyn(cmd: u16, cpu: &mut Cpu) {
             col = (col + 1) % 64;
             let lin_indx = row * 64 + col;
 
-            if color_byte >> (7 - j) & 0b1 == 1 {
+            if (color_byte >> (7 - j)) & 0b1 == 1 {
                 if cpu.display[lin_indx as usize] == 0xFFFFFFFF {
                     // collision
                     cpu.registers_general[0xF] = 1;
@@ -245,6 +245,87 @@ fn draw_dxyn(cmd: u16, cpu: &mut Cpu) {
     }
 }
 
+fn skip_if_key_Ex9E(cmd: u16, cpu: &mut Cpu) {
+    let x = get_x(cmd);
+    let val = cpu.registers_general[x as usize];
 
+    if cpu.keypad[val as usize] == 0xFF {
+        cpu.pc += 2;
+    }
+}
 
+fn skip_ifn_key_ExA1(cmd: u16, cpu: &mut Cpu) {
+    let x = get_x(cmd);
+    let val = cpu.registers_general[x as usize];
 
+    if cpu.keypad[val as usize] != 0xFF {
+        cpu.pc += 2;
+    }
+}
+
+fn set_Fx07(cmd: u16, cpu: &mut Cpu) {
+    let x = get_x(cmd);
+    cpu.registers_general[x as usize]= cpu.delay_timer;
+}
+
+fn store_key_Fx0A(cmd: u16, cpu: &mut Cpu) {
+    let x = get_x(cmd);
+    let mut found = false;
+    for i in 0..16 {
+        if cpu.keypad[i] == 0xFF {
+            cpu.registers_general[x as usize] = i as u8;
+            found = true;
+            break;
+        }
+    }
+
+    if !found { // wait for key, thus reduce pc
+        cpu.pc -= 2;
+    }
+}
+
+fn set_Fx15(cmd: u16, cpu: &mut Cpu) {
+    let x = get_x(cmd);
+    cpu.delay_timer = cpu.registers_general[x as usize];
+}
+
+fn set_Fx18(cmd: u16, cpu: &mut Cpu) {
+    let x = get_x(cmd);
+    cpu.sound_timer = cpu.registers_general[x as usize];
+}
+
+fn set_Fx1E(cmd: u16, cpu: &mut Cpu) {
+    let x = get_x(cmd);
+    cpu.register_i += cpu.registers_general[x as usize] as u16;
+}
+
+fn get_digit_Fx29(cmd: u16, cpu: &mut Cpu) {
+    let x = get_x(cmd);
+    let digit = cpu.registers_general[x as usize];
+    cpu.register_i = super::FONT_START + (5 * digit as u16);
+}
+
+fn decimal_Fx33(cmd: u16, cpu: &mut Cpu) {
+    let x = get_x(cmd);
+    let mut num = cpu.registers_general[x as usize];
+    cpu.memory[cpu.register_i as usize] = num / 100;
+    num = num % 100;
+    cpu.memory[cpu.register_i as usize + 1] = num / 10;
+    num = num % 10;
+    cpu.memory[cpu.register_i as usize + 2] = num;
+
+}
+
+fn store_Fx55(cmd: u16, cpu: &mut Cpu) {
+    let x = get_x(cmd) as usize;
+    for i in 0..=x {
+        cpu.memory[cpu.register_i as usize + i] = cpu.registers_general[i];
+    }
+}
+
+fn read_Fx55(cmd: u16, cpu: &mut Cpu) {
+    let x = get_x(cmd) as usize;
+    for i in 0..=x {
+        cpu.registers_general[i] = cpu.memory[cpu.register_i as usize + i];
+    }
+}
