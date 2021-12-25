@@ -56,7 +56,7 @@ Use the leftmost 4x4 keys (1 2 3 4/ Q W E R/.../ Y X C V)
 ### Display:
 64x32 pixel monochrome display.
 Sprites are the main element. This is a group of bytes which are a binary representation
-of the desired picture. They may be up to 15 bytes in size (sprite dim: 8x15)
+of the desired picture.
 
 ### Timers 'n sounds:
 
