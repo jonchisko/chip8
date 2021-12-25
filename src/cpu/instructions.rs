@@ -40,7 +40,7 @@ fn get_y(cmd: u16) -> u16 {
     (cmd & 0x00F0) >> 4
 }
 
-fn noop(_cmd: u16, cpu: &mut Cpu) {
+fn noop(_cmd: u16, _cpu: &mut Cpu) {
 
 }
 
@@ -105,15 +105,95 @@ fn skip_9xy0(cmd: u16, cpu: &mut Cpu) {
 
 fn set_6xkk(cmd: u16, cpu: &mut Cpu) {
     let reg_x = get_x(cmd);
-    let constant = cmd & 0x0FF;
+    let constant = cmd & 0x00FF;
     cpu.registers_general[reg_x as usize] = constant as u8; 
 }
 
 fn add_7xkk(cmd: u16, cpu: &mut Cpu) {
     let reg_x = get_x(cmd);
-    let constant = cmd & 0x0FF;
+    let constant = cmd & 0x00FF;
     cpu.registers_general[reg_x as usize] += constant as u8;
 }
 
 // <------------------------------------------------->
 
+fn op_8(cmd: u16, cpu: &mut Cpu, fun: fn(u16, u16, &mut Cpu)) {
+    let reg_x = get_x(cmd);
+    let reg_y = get_y(cmd);
+    fun(reg_x, reg_y, cpu);
+}
+
+fn set_8xy0(cmd: u16, cpu: &mut Cpu) {
+    op_8(cmd, cpu, |x, y, cpu|{
+        cpu.registers_general[x as usize] = cpu.registers_general[y as usize];
+    });
+}
+
+fn or_8xy1(cmd: u16, cpu: &mut Cpu) {
+    op_8(cmd, cpu, |x, y, cpu|{
+        cpu.registers_general[x as usize] |= cpu.registers_general[y as usize];
+    });
+}
+
+fn and_8xy2(cmd: u16, cpu: &mut Cpu) {
+    op_8(cmd, cpu, |x, y, cpu|{
+        cpu.registers_general[x as usize] &= cpu.registers_general[y as usize];
+    });
+}
+
+fn xor_8xy3(cmd: u16, cpu: &mut Cpu) {
+    op_8(cmd, cpu, |x, y, cpu|{
+        cpu.registers_general[x as usize] ^= cpu.registers_general[y as usize];
+    });
+}
+
+fn add_8xy4(cmd: u16, cpu: &mut Cpu) {
+    op_8(cmd, cpu, |x, y, cpu|{
+        let sum = cpu.registers_general[x as usize] as u16 + cpu.registers_general[y as usize] as u16;
+        if 255 - cpu.registers_general[y as usize] < cpu.registers_general[x as usize] {
+            cpu.registers_general[0xF as usize] = 1;
+        } else {
+            cpu.registers_general[0xF as usize] = 0;
+        }
+        cpu.registers_general[x as usize] = (sum & 0xFF) as u8;
+    });
+}
+ 
+fn sub_8xy5(cmd: u16, cpu: &mut Cpu) {
+    op_8(cmd, cpu, |x, y, cpu| {
+        let sub;
+        if cpu.registers_general[x as usize] > cpu.registers_general[y as usize] {
+            cpu.registers_general[0xF as usize] = 1;
+        } else {
+            cpu.registers_general[0xF as usize] = 0;
+        }
+
+        if cpu.registers_general[x as usize] < cpu.registers_general[y as usize] {
+            sub = (255i16 + (cpu.registers_general[x as usize] as i16 - cpu.registers_general[y as usize] as i16)) as u8;
+        } else {
+            sub = cpu.registers_general[x as usize] - cpu.registers_general[y as usize];
+        }
+        cpu.registers_general[x as usize] = sub;
+    })
+}
+
+fn shiftright_8xy6(cmd: u16, cpu: &mut Cpu) {
+    op_8(cmd, cpu, |x, _y, cpu| {
+        cpu.registers_general[0xF as usize] = if cpu.registers_general[x as usize] & 0b1 == 1 { 1 } else { 0 };
+        cpu.registers_general[x as usize] >>= 1;
+    })
+}
+
+fn sub_8xy7(cmd: u16, cpu: &mut Cpu) {
+    let x = cmd & 0x0F00 >> 8;
+    let y = cmd & 0x00F0 >> 4;
+    let new_cmd = (8 << 12) | (y << 8) | (x << 4) | (7);
+    sub_8xy5(new_cmd, cpu);
+}
+
+fn shiftleft_8xyE(cmd: u16, cpu: &mut Cpu) {
+    op_8(cmd, cpu, |x, _y, cpu| {
+        cpu.registers_general[0xF as usize] = if cpu.registers_general[x as usize] & (0b1 << 7) == 1 { 1 } else { 0 };
+        cpu.registers_general[x as usize] <<= 1;
+    })
+}
