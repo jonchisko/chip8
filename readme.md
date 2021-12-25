@@ -223,11 +223,6 @@ Read registers V0 through Vx from memory starting at location I.
 The interpreter reads values from memory starting at location I into registers V0 through Vx.
 
 
-### "The loop"
-
-
-
-
 ## Sources
 http://devernay.free.fr/hacks/chip8/C8TECH10.HTM
 https://multigesture.net/articles/how-to-write-an-emulator-chip-8-interpreter/
