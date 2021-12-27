@@ -65,6 +65,24 @@ impl Cpu {
             self.memory[i] = FONTS[i - FONT_START as usize];
         }
     }
+
+    pub fn get_display(&self) -> &[u32; 64 * 32] {
+        &self.display
+    }
+
+    pub fn set_keypad(&mut self, val: usize) {
+        self.keypad[val] = 0xFF;
+    }
+
+    pub fn unset_keypad(&mut self, val: usize) {
+        self.keypad[val] = 0;
+    }
+
+    pub fn reset_keypad(&mut self) {
+        for i in 0..16 {
+            self.keypad[i] = 0;
+        }
+    }
 }
 
 pub fn fetch(cpu: &mut Cpu) -> u16 {

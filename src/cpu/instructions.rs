@@ -280,16 +280,13 @@ fn draw_dxyn(cmd: u16, cpu: &mut Cpu) {
 
     let sprite_data = &cpu.memory[(cpu.register_i as usize)..(cpu.register_i as usize + size as usize)];
 
-    let mut row = y;
-    let mut col = x;
+    let y_pos = cpu.registers_general[y as usize] % 32;
+    let x_pos = cpu.registers_general[x as usize] % 64;
 
     for i in 0..size {
         let color_byte = sprite_data[i as usize];
-        row = (row + 1) % 32;
         for j in 0..8 {
-            col = (col + 1) % 64;
-            let lin_indx = row * 64 + col;
-
+            let lin_indx = (y_pos as usize + i as usize) * 64 + (x_pos as usize + j);
             if (color_byte >> (7 - j)) & 0b1 == 1 {
                 if cpu.display[lin_indx as usize] == 0xFFFFFFFF {
                     // collision
