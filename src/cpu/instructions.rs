@@ -1,7 +1,7 @@
 use super::Cpu;
 use rand::{self, Rng};
 
-struct Instructions {
+pub struct Instructions {
     collection_0: [fn(cmd: u16, cpu: &mut Cpu) -> (); 0xF + 1],
     collection_1: [fn(cmd: u16, cpu: &mut Cpu) -> (); 0xE + 1],
     collection_2: [fn(cmd: u16, cpu: &mut Cpu) -> (); 0xE + 1],
@@ -24,13 +24,55 @@ impl Instructions {
         new_instructions
     }
 
-    pub fn execute(&self, cmd: u16, cpu: &mut Cpu) {
-        
-    }
-
     fn set_instructions(&mut self) {
+        self.collection_0[0x0] = table_0;
+        self.collection_0[0x1] = jump_1nnn;
+        self.collection_0[0x2] = call_2nnn;
+        self.collection_0[0x3] = skip_3xkk;
+        self.collection_0[0x4] = skip_4xkk;
+        self.collection_0[0x5] = skip_5xy0;
+        self.collection_0[0x6] = set_6xkk;
+        self.collection_0[0x7] = add_7xkk;
+        self.collection_0[0x8] = table_1;
+        self.collection_0[0x9] = skip_9xy0;
+        self.collection_0[0xA] = set_i_annn;
+        self.collection_0[0xB] = jump_bnnn;
+        self.collection_0[0xC] = rand_cxkk;
+        self.collection_0[0xD] = draw_dxyn;
+        self.collection_0[0xE] = table_2;
+        self.collection_0[0xF] = table_3;
 
+        self.collection_1[0x0] = clear_00E0;
+        self.collection_1[0xE] = return_00EE;
+
+        self.collection_2[0x0] = set_8xy0;
+        self.collection_2[0x1] = or_8xy1;
+        self.collection_2[0x2] = and_8xy2;
+        self.collection_2[0x3] = xor_8xy3;
+        self.collection_2[0x4] = add_8xy4;
+        self.collection_2[0x5] = sub_8xy5;
+        self.collection_2[0x6] = shiftright_8xy6;
+        self.collection_2[0x7] = sub_8xy7;
+        self.collection_2[0xE] = shiftleft_8xyE;
+
+        self.collection_3[0x1] = skip_ifn_key_ExA1;
+        self.collection_3[0xE] = skip_if_key_Ex9E;
+
+        self.collection_4[0x33] = decimal_Fx33;
+        self.collection_4[0x15] = set_Fx15;
+        self.collection_4[0x07] = set_Fx07;
+        self.collection_4[0x18] = set_Fx18;
+        self.collection_4[0x0A] = store_key_Fx0A;
+        self.collection_4[0x1E] = set_Fx1E;
+        self.collection_4[0x55] = store_Fx55;
+        self.collection_4[0x29] = get_digit_Fx29;
+        self.collection_4[0x65] = read_Fx65;
     }
+
+}
+
+pub fn execute(cmd: u16, cpu: &mut Cpu) {
+    cpu.instructions.collection_0[(cmd & 0xF) as usize](cmd, cpu);
 }
 
 fn get_x(cmd: u16) -> u16 {
@@ -43,6 +85,22 @@ fn get_y(cmd: u16) -> u16 {
 
 fn noop(_cmd: u16, _cpu: &mut Cpu) {
 
+}
+
+fn table_0(cmd: u16, cpu: &mut Cpu) {
+    cpu.instructions.collection_1[(cmd & 0xF) as usize](cmd, cpu);
+}
+
+fn table_1(cmd: u16, cpu: &mut Cpu) {
+    cpu.instructions.collection_2[(cmd & 0xF) as usize](cmd, cpu);
+}
+
+fn table_2(cmd: u16, cpu: &mut Cpu) {
+    cpu.instructions.collection_3[(cmd & 0xF) as usize](cmd, cpu);
+}
+
+fn table_3(cmd: u16, cpu: &mut Cpu) {
+    cpu.instructions.collection_4[(cmd & 0xFF) as usize](cmd, cpu);
 }
 
 fn clear_00E0(_cmd: u16, cpu: &mut Cpu) {
@@ -115,8 +173,6 @@ fn add_7xkk(cmd: u16, cpu: &mut Cpu) {
     let constant = cmd & 0x00FF;
     cpu.registers_general[reg_x as usize] += constant as u8;
 }
-
-// <------------------------------------------------->
 
 fn op_8(cmd: u16, cpu: &mut Cpu, fun: fn(u16, u16, &mut Cpu)) {
     let reg_x = get_x(cmd);
@@ -323,7 +379,7 @@ fn store_Fx55(cmd: u16, cpu: &mut Cpu) {
     }
 }
 
-fn read_Fx55(cmd: u16, cpu: &mut Cpu) {
+fn read_Fx65(cmd: u16, cpu: &mut Cpu) {
     let x = get_x(cmd) as usize;
     for i in 0..=x {
         cpu.registers_general[i] = cpu.memory[cpu.register_i as usize + i];
