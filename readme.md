@@ -1,4 +1,6 @@
 ### Usage
+(note, currently broken)
+
 Chip8 interpreter is written in Rust for learning purposes. The program can be run by
 ./chip8 <name>.rom <execution_speed>
 
@@ -225,8 +227,12 @@ The interpreter reads values from memory starting at location I into registers V
 
 ## Sources
 http://devernay.free.fr/hacks/chip8/C8TECH10.HTM
+ 
 https://multigesture.net/articles/how-to-write-an-emulator-chip-8-interpreter/
+ 
 https://austinmorlan.com/posts/chip8_emulator/
+ 
 https://en.wikipedia.org/wiki/CHIP-8
+ 
 https://chip-8.github.io/links/
 
