@@ -72,7 +72,7 @@ impl Instructions {
 }
 
 pub fn execute(cmd: u16, cpu: &mut Cpu) {
-    cpu.instructions.collection_0[(cmd & 0xF) as usize](cmd, cpu);
+    cpu.instructions.collection_0[((cmd & 0xF000) >> 12) as usize](cmd, cpu);
 }
 
 fn get_x(cmd: u16) -> u16 {
@@ -171,7 +171,14 @@ fn set_6xkk(cmd: u16, cpu: &mut Cpu) {
 fn add_7xkk(cmd: u16, cpu: &mut Cpu) {
     let reg_x = get_x(cmd);
     let constant = cmd & 0x00FF;
-    cpu.registers_general[reg_x as usize] += constant as u8;
+
+    let sum = cpu.registers_general[reg_x as usize] as u16 + constant as u16;
+    if 255 - constant > cpu.registers_general[reg_x as usize] as u16 {
+        cpu.registers_general[0xF as usize] = 1;
+    } else {
+        cpu.registers_general[0xF as usize] = 0;
+    }
+    cpu.registers_general[reg_x as usize] = (sum & 0xFF) as u8;
 }
 
 fn op_8(cmd: u16, cpu: &mut Cpu, fun: fn(u16, u16, &mut Cpu)) {

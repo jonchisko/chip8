@@ -27,6 +27,10 @@ fn main() {
         engine.wait_frame();
         engine.clear_screen();
 
+        if engine.is_key_pressed(KeyCode::Enter) {
+            break;
+        }
+
         process_input(&engine, &mut cpu);
 
         let cmd = cpu::fetch(&mut cpu);
@@ -34,41 +38,30 @@ fn main() {
         cpu::decrease_timers(&mut cpu);
         
         draw_screen(&mut engine, &cpu);
-        //draw_debug(&cpu);
+        //draw_debug(&mut engine);
 
         /* dumbed down way of slowing down. One other approach would be to have a timer at the beginning, check how much time has passed
         at this line and check the difference. If the difference was negative, go on, otherwise wait for the amount of time left.
          */
         thread::sleep(Duration::from_secs_f64(cycle_time)); 
 
-        if engine.is_key_pressed(KeyCode::Enter) {
-            break;
-        }
-
-        println!("Cycle complete!");
+        //println!("Cycle complete!");
     }
 }
 
-fn draw_debug(cpu: &Cpu) {
-    for (i, px) in cpu.get_display().iter().enumerate() {
-        let x = i % 64;
-        let y = i / 32;
-        if px & 0b1 == 1 {
-            print!("X");
-        } else {
-            print!(" ");
-        }
-        if y > 0 && x == 0 {
-            println!("");
-        }
+fn draw_debug(eng: &mut ConsoleEngine) {
+    for i in 0..64*32 {
+        let x = i / 64;
+        let y = i % 32;
+        eng.set_pxl(x as i32, y as i32, Pixel{bg: Color::Yellow, fg: Color::Yellow, chr: 'P'});
     }
-
+    eng.draw();
 }
 
 fn draw_screen(eng: &mut ConsoleEngine, cpu: &Cpu) {
     for (i, px) in cpu.get_display().iter().enumerate() {
-        let x = i % 64;
-        let y = i / 32;
+        let x = i / 64;
+        let y = i % 32;
         if px & 0b1 == 1 {
             eng.set_pxl(x as i32, y as i32, Pixel{bg: Color::Yellow, fg: Color::Yellow, chr: 'P'});
         } else {
